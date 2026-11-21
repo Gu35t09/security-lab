@@ -21,7 +21,7 @@ managed by `ansible-prod-srv`, and must not require any change to it.
 | Routing | Outbound NAT on the lab OPNsense. Static routes on the router only so the production notebook can reach the lab without a VPN |
 | Mirroring | Open vSwitch mirrors on `nw2` and on the N100, each with a direct cable to `nw1` |
 | `nw1` network card | 4x 1 GbE instead of the 1x 2.5 GbE |
-| Additional SIEM | Graylog Open, alongside Security Onion |
+| Additional SIEM | Fully open source stack: OpenSearch, OpenSearch Dashboards and Fluent Bit, alongside Security Onion. Separate from the OpenSearch fork bundled with Wazuh |
 | Virtualization | Proxmox VE cluster on three nodes |
 | Storage | ext4 with LVM-thin, the default Proxmox install. No ZFS, no Ceph, no replication |
 | Switch speed | 1 GbE on every port |
@@ -32,7 +32,7 @@ managed by `ansible-prod-srv`, and must not require any change to it.
 | Node | Hardware | Role |
 |---|---|---|
 | `nw1` | NodeWeaver, Xeon 4c/8t, 32 GB, 2 TB SSD, 2x 1 GbE onboard, 4x 1 GbE card | Security Onion standalone |
-| `nw2` | NodeWeaver, Xeon 4c/8t, 24 GB, 2 TB SSD, 2x 1 GbE, 1x 2.5 GbE | Targets, Kali, Graylog |
+| `nw2` | NodeWeaver, Xeon 4c/8t, 24 GB, 2 TB SSD, 2x 1 GbE, 1x 2.5 GbE | Targets, Kali, OpenSearch stack |
 | `n100` | N100 mini PC 4c/4t, 32 GB, 1 TB SSD, 4x 2.5 GbE | Lab OPNsense, Wazuh, Caldera, light SOC services, quorum |
 
 The 32 GB NodeWeaver must be `nw1`. Security Onion standalone needs at least
@@ -129,7 +129,7 @@ production address plan to avoid overlaps.
 |---|---|---|---|
 | 600 | LAB-MGMT | 10.66.0.0/24 | Proxmox interfaces, tool web UIs |
 | 602 | LAB-CLUSTER | 10.66.2.0/24 | Proxmox cluster corosync traffic, no gateway |
-| 610 | LAB-SOC | 10.66.10.0/24 | Security Onion, Graylog, Wazuh, Velociraptor, MISP, IRIS, Shuffle |
+| 610 | LAB-SOC | 10.66.10.0/24 | Security Onion, OpenSearch stack, Wazuh, Velociraptor, MISP, IRIS, Shuffle |
 | 620 | LAB-TGT-WIN | 10.66.20.0/24 | AD domain and Windows clients |
 | 621 | LAB-TGT-LNX | 10.66.21.0/24 | Vulnerable Linux servers |
 | 630 | LAB-ATTACK | 10.66.30.0/24 | Kali, Caldera |
@@ -166,7 +166,7 @@ like any other host on its WAN side.
 | LAB-MGMT | Any lab VLAN | Management |
 | LAB-SOC | Internet | Allowlist only: package repositories, ET rules, MISP feeds, GitHub |
 | LAB-BUILD | Internet | Allowlist only: Windows Update, Debian, Ubuntu and Kali mirrors |
-| LAB-TGT-WIN and LAB-TGT-LNX | LAB-SOC | Agent ports only: Wazuh, Velociraptor, Elastic Agent, Graylog Sidecar |
+| LAB-TGT-WIN and LAB-TGT-LNX | LAB-SOC | Agent ports only: Wazuh, Velociraptor, Elastic Agent, Fluent Bit forward to the aggregator |
 | LAB-ATTACK | LAB-TGT-WIN and LAB-TGT-LNX | Everything |
 | LAB-ATTACK | LAB-SOC | Nothing, except for specific exercises |
 | Any lab VLAN | Router network and private addresses outside the lab | Never, except the router as gateway |
@@ -302,7 +302,7 @@ talking to Wazuh. That is acceptable for a lab.
 
 The OPNsense WAN is in passthrough and does not go through Open vSwitch, so no
 mirror sees it. Suricata built into OPNsense covers it, running on the WAN,
-with alerts sent to Graylog and Security Onion.
+with alerts sent to OpenSearch and Security Onion.
 
 If a copy exceeds 1 GbE, Security Onion drops packets but the lab keeps
 working.
@@ -343,16 +343,26 @@ phase.
 
 | VM | vCPU | RAM | Disk | Notes |
 |---|---|---|---|---|
-| Graylog | 4 | 8 GB | 200 GB | Graylog 7.2, MongoDB and Data Node in the same VM. VLAN LAB-SOC |
+| LOG01, OpenSearch stack | 4 | 8 GB | 200 GB | Single-node OpenSearch, OpenSearch Dashboards and the Fluent Bit aggregator in the same VM. VLAN LAB-SOC |
 | Kali | 2 | 3 GB | 60 GB | Light XFCE desktop |
 | Total | | 11 GB | 260 GB | |
 
-Indicative Graylog RAM split: 2 GB for the Graylog server, 4 GB for the Data
-Node, 1 GB for MongoDB, 1 GB for the system. Without the ZFS cache Graylog gets
-its 8 GB back. If RAM is needed, it can drop to 6 GB with 1 GB for the server
-and 3 GB for the Data Node.
+Indicative LOG01 RAM split:
 
-Graylog sits on `nw2` because it is the only node with free RAM. It is on the
+| Component | RAM |
+|---|---|
+| OpenSearch, with a 3 GB JVM heap | 6 GB |
+| OpenSearch Dashboards | 1 GB |
+| Fluent Bit aggregator and system | 1 GB |
+
+If RAM is needed, LOG01 can drop to 6 GB with a 2 GB OpenSearch heap.
+
+This OpenSearch is separate from the Wazuh indexer and dashboard, even though
+those are an OpenSearch fork. Wazuh pins its own OpenSearch version and does
+not ship the Security Analytics plugin, and keeping the two apart makes it
+clear what each stack does.
+
+LOG01 sits on `nw2` because it is the only node with free RAM. It is on the
 SOC VLAN even though it shares the hypervisor with the targets. For a lab, the
 risk of a VM escape is negligible.
 
@@ -382,11 +392,11 @@ risk of a VM escape is negligible.
 | Fixed services and Windows scenario | 19 GB |
 | Fixed services and Linux scenario | 15 GB |
 | Fixed services and both scenarios | 23 GB, does not fit |
-| Both scenarios with Graylog at 6 GB | 21 GB, fits with 1 GB of headroom |
+| Both scenarios with LOG01 at 6 GB | 21 GB, fits with 1 GB of headroom |
 
 With 24 GB, alternating between the Windows and Linux scenarios remains the
 normal way of working. Running both at once is only possible by shrinking
-Graylog, and the headroom is too small for continuous use.
+LOG01, and the headroom is too small for continuous use.
 The two scenarios should be grouped into Proxmox pools, so each can be started
 and stopped with a single command. KSM and ballooning give a few GB of extra
 headroom, but they should not be counted in the budget.
@@ -396,7 +406,7 @@ headroom, but they should not be counted in the budget.
 - **Server Core** instead of the desktop experience, managed with RSAT from the workstation.
 - **VirtIO drivers and ballooning** on every Windows VM.
 - **KSM** enabled on `nw2`.
-- **Rotating agents.** Sysmon is always on. Wazuh, Elastic Agent, Graylog Sidecar and Velociraptor are enabled depending on the phase, not all at once on the same VM.
+- **Rotating agents.** Sysmon is always on. Wazuh, Elastic Agent and Velociraptor are enabled depending on the phase, not all at once on the same VM. Fluent Bit uses only a few MB and can stay on.
 - **Unneeded services disabled** in the templates, for example search and telemetry.
 
 ## 6. Templates and VM lifecycle
@@ -419,7 +429,7 @@ groups and configurations. GOAD-Mini remains a ready-made alternative.
 | Area | Tool | Where |
 |---|---|---|
 | Network and SIEM | Security Onion: Suricata, Zeek, Strelka, Elastic | `nw1` |
-| Log management and SIEM | Graylog Open 7.2 | `nw2` |
+| Log management and SIEM | OpenSearch, OpenSearch Dashboards, Fluent Bit | `nw2` |
 | Endpoint and XDR | Wazuh | `n100` |
 | Windows telemetry | Sysmon with a reference configuration | Windows targets |
 | Live forensics | Velociraptor | `n100` |
@@ -427,29 +437,52 @@ groups and configurations. GOAD-Mini remains a ready-made alternative.
 | Automation | Shuffle | `n100` |
 | Threat intelligence | MISP | `n100` |
 | Adversary emulation | Caldera on `n100`, Atomic Red Team on the targets | `n100`, `nw2` |
-| Rules | Sigma, converted for Security Onion, Graylog and Wazuh | Repository |
+| Rules | Sigma, used by Security Onion, OpenSearch Security Analytics and Wazuh | Repository |
 
-### 7.1 Graylog's role
+### 7.1 The OpenSearch stack
 
-Security Onion stays the main network tool. Graylog becomes the central log
-platform, with these sources:
-- **Lab OPNsense** over syslog. It is Graylog's classic use case and works from day one.
-- **Windows and Sysmon events** through Graylog Sidecar.
-- **Wazuh alerts** forwarded by Wazuh.
-- **Linux logs** from the targets through Sidecar or syslog.
+Security Onion stays the main network tool. A fully open source stack becomes
+the central log platform. All three components are under the Apache 2.0
+license.
 
-What Graylog Open offers, according to the product page:
-- search, dashboards, streams and processing pipelines;
-- threshold and event-based alerts;
-- import of Sigma rules from private Git repositories;
-- SSPL license, free, with no volume limits for internal use.
+| Component | Role |
+|---|---|
+| Fluent Bit, on the targets | Lightweight agent: Windows event log including Sysmon, Linux logs |
+| Fluent Bit, aggregator on LOG01 | Receives from the agents and the syslog sources, parses, enriches, writes to OpenSearch |
+| OpenSearch | Storage and search, with the Security Analytics, Alerting and Anomaly Detection plugins |
+| OpenSearch Dashboards | Search, dashboards, detectors and alerts |
 
-Paid editions keep: anomaly detection, investigations, ready-made detection
-content, risk scoring. Sigma support in the Open edition must be checked in
-practice in phase 5.
+Data flow:
 
-Seeing the same attack in Security Onion and in Graylog gives a direct
-comparison between the Elastic stack and the Graylog stack.
+```
+Windows and Linux targets  -- Fluent Bit forward -->  aggregator  -->  OpenSearch
+Lab OPNsense, syslog and Suricata  ------------------>  aggregator
+Wazuh server, alerts file read by Fluent Bit  ------->  aggregator
+```
+
+Sources, in order of introduction:
+- **Lab OPNsense** over syslog, including the Suricata alerts from its WAN. It works from day one.
+- **Windows and Sysmon events** through the Fluent Bit Windows event log input.
+- **Wazuh alerts**, read from the alerts file on the Wazuh server by a local Fluent Bit.
+- **Linux logs** from the targets through Fluent Bit.
+
+What the stack offers for free:
+- **Security Analytics:** detectors with prepackaged Sigma rules, custom Sigma rules, correlation between log types, threat intelligence feeds;
+- **Alerting** on queries and on detector findings;
+- **Anomaly Detection** on metrics such as failed logins or traffic volumes;
+- **Index State Management**, to roll over and delete old indices, which matters on a 200 GB disk.
+
+What has to be built by hand, compared with an integrated product:
+- **Parsing.** Fluent Bit parsers, or OpenSearch ingest pipelines, for each source.
+- **Field mapping.** Security Analytics applies Sigma rules only when the fields match the log type it expects. Normalizing towards a common schema, for example ECS, is part of phase 5.
+- **Agent configuration.** There is no central agent management. Fluent Bit configurations are deployed with Ansible, like the rest of the lab.
+
+Seeing the same attack in Security Onion and in OpenSearch gives a direct
+comparison between Elastic Security and OpenSearch Security Analytics, two
+engines with a common origin that are now separate projects.
+
+Licensing note: Security Onion is built on Elastic, which is not under Apache
+2.0. It is the one component that does not fit a strictly open source lab.
 
 ## 8. Phases and completion criteria
 
@@ -484,21 +517,22 @@ comparison between the Elastic stack and the Graylog stack.
 - Suricata on the lab OPNsense WAN.
 - **Done when:** an Nmap scan from Kali shows up in Zeek and raises Suricata alerts. Traffic between two VMs on the same node is visible. A package update from LAB-SOC shows up in Zeek, and the same flow between Kali and a target does not appear twice.
 
-### Phase 5: log management with Graylog
-- Graylog with Data Node and MongoDB.
-- Ingest the lab OPNsense logs first, then Sidecar on the targets, then Wazuh alerts.
-- Pipelines to normalize fields, dashboards for the firewall and Windows events.
-- Test the Sigma rule import.
-- **Done when:** the phase 3 alert is visible in Graylog together with the firewall logs from the same moment.
+### Phase 5: log management with OpenSearch and Fluent Bit
+- LOG01 with single-node OpenSearch, OpenSearch Dashboards and the Fluent Bit aggregator.
+- Ingest the lab OPNsense logs first, then Fluent Bit on the targets, then Wazuh alerts.
+- Parsers and field normalization towards a common schema, dashboards for the firewall and Windows events.
+- Index State Management policy so the indices fit in the 200 GB disk.
+- Security Analytics detectors with the prepackaged Sigma rules for Windows and network logs.
+- **Done when:** the phase 3 alert is visible in OpenSearch together with the firewall logs from the same moment, and a Security Analytics detector raises a finding for the same Atomic Red Team run.
 
 ### Phase 6: attacks
 - Full chain from Kali: reconnaissance, initial access, lateral movement, domain compromise.
 - The same techniques replayed repeatably with Caldera.
-- **Done when:** there is a table with every technique executed and where it was detected or missed, in Wazuh, Security Onion and Graylog.
+- **Done when:** there is a table with every technique executed and where it was detected or missed, in Wazuh, Security Onion and OpenSearch.
 
 ### Phase 7: detection engineering
 - Purple team loop: attack, check, Sigma rule, attack again.
-- The same Sigma rules converted for Security Onion and Graylog, with the results compared.
+- The same Sigma rules used in Security Onion and in OpenSearch Security Analytics, with the results compared.
 - **Done when:** the techniques missed in phase 6 have a tested rule in the repository, on at least one of the two SIEMs.
 
 ### Phase 8: incident response
@@ -508,7 +542,7 @@ comparison between the Elastic stack and the Graylog stack.
 
 ### Phase 9: extensions
 - Chosen based on what came out of the earlier phases.
-- Candidates: OpenCanary for internal deception, OpenCTI, NetFlow from the OPNsense to Graylog.
+- Candidates: OpenCanary for internal deception, OpenCTI, NetFlow from the OPNsense into OpenSearch, with a NetFlow collector still to be chosen.
 
 ## 9. Automation
 
