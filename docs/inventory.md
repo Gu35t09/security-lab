@@ -47,7 +47,7 @@ Open points:
 - **LAN mode.** Done: dedicated, so the BMC never appears on the trunk port.
 - **Hardening.** A Haswell-era BMC has known weaknesses. It must live only on LAB-MGMT, with a new admin password and the latest firmware available.
 - **Placement, decided 2026-11-21.** The BMC stays on the router network, 10.0.0.0/24, for now. That keeps out-of-band access even when the lab nodes or the lab OPNsense are down. The move to LAB-MGMT, at 10.66.0.11, is postponed.
-- **While it stays on the router network,** every device on that network can reach it. A new admin password, the latest firmware and SNMP turned off reduce the exposure. Admin password changed on 2026-11-21; firmware and SNMP still to do.
+- **While it stays on the router network,** every device on that network can reach it. A new admin password, the latest firmware and SNMP turned off reduce the exposure. Admin password changed and BMC firmware updated on 2026-11-21. SNMP still to check.
 
 ## nw2
 
@@ -88,7 +88,7 @@ Worth watching once Proxmox runs, with smartd alerts.
 
 Open points:
 - **LAN mode.** Done: dedicated.
-- **Hardening.** Admin password changed and IPMI users checked on 2026-11-21. Firmware and SNMP still to do. It stays on the router network for now, like `nw1`.
+- **Hardening.** Admin password changed, IPMI users checked and BMC firmware updated on 2026-11-21. SNMP still to check. It stays on the router network for now, like `nw1`.
 
 ## n100
 
