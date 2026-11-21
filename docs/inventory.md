@@ -92,4 +92,62 @@ Open points:
 
 ## n100
 
-Not collected yet.
+Collected on 2026-11-21 from its current Debian 13 install, hostname
+`ai-test`.
+
+| Item | Value |
+|---|---|
+| CPU | Intel N100, 4 cores, 4 threads, VT-x |
+| VT-d | Enabled: the kernel exposes IOMMU groups |
+| RAM | 32 GB |
+| Disk | Kingchuxing 1 TB SATA SSD |
+| Disk health | SMART passed, no reallocated or pending sectors, no program or erase failures, no errors logged. Extended self-test completed without error |
+| Disk age | 18934 power-on hours, about two years and two months of continuous use |
+| Disk temperature | 40 °C |
+| IPMI | None. Address .13 stays reserved but unused |
+
+The node currently runs Docker and uses about 15 GB of RAM. Whatever runs
+there must be moved or confirmed disposable before Proxmox is installed,
+because the install wipes the disk.
+
+The disk is an entry-level model with many hours on it. It is healthy today,
+but it is the weakest disk of the lab and hosts the lab OPNsense. Backups of
+the OPNsense configuration and of the SOC VMs matter most on this node.
+
+### Network interfaces
+
+| Interface | Controller | PCI address | IOMMU group | Role in the plan |
+|---|---|---|---|---|
+| `enp1s0` | Intel I226-V | 01:00.0 | 9 | 2.5 GbE #1: lab OPNsense WAN, in passthrough |
+| `enp2s0` | Intel I226-V | 02:00.0 | 10 | 2.5 GbE #2: trunk |
+| `enp3s0` | Intel I226-V | 03:00.0 | 11 | 2.5 GbE #3: corosync |
+| `enp4s0` | Intel I226-V | 04:00.0 | 12 | 2.5 GbE #4: mirror output to `nw1` |
+
+Every port has its own IOMMU group, so the WAN port can be passed through to
+the OPNsense VM on its own. The fallback with a bridge is not needed.
+
+The order of the physical ports on the case still has to be matched to the
+interface names, for example by making each port LED blink with
+`ethtool -p`.
+
+Without IPMI there is no remote power control. If the N100 hangs, it needs
+physical access, and the whole lab loses its network meanwhile.
+
+## Phase 0 status
+
+| Item | Status |
+|---|---|
+| Disk health and CPU model | Done for all three nodes |
+| 32 GB NodeWeaver identified as `nw1` | Done |
+| NodeWeaver IPMI port | Done: dedicated on both, hardened, kept on the router network for now |
+| N100 passthrough of the WAN port | Possible: every port has its own IOMMU group |
+| Address plan against production | Partly done, see below |
+| Notebook outbound rules on the production OPNsense | To check |
+| N100 physical port order | To check |
+| Current N100 workload | To move or confirm disposable |
+
+Address plan: the production server repository uses VLAN 11 with
+10.123.11.0/24 and VLAN 12 with 10.123.12.0/24. The router network is
+10.0.0.0/24. None of them overlaps with 10.66.0.0/16 or with VLANs 600 to 640.
+Networks defined only on the production OPNsense, such as the notebook
+network, are not in the repository and still need a look.
