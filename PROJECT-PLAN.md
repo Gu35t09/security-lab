@@ -487,7 +487,7 @@ Licensing note: Security Onion is built on Elastic, which is not under Apache
 ## 8. Phases and completion criteria
 
 ### Phase 0: inventory
-- Disk health and CPU model of the NodeWeavers.
+- Disk health and CPU model of the NodeWeavers. Results in [docs/inventory.md](docs/inventory.md).
 - Address plan checked against production.
 - Identify the 32 GB NodeWeaver, which becomes `nw1`.
 - Check the notebook's outbound rules on the production OPNsense, see 4.4.
