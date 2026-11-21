@@ -142,8 +142,17 @@ Indirizzi fissi principali:
 | Host | Indirizzo |
 |---|---|
 | OPNsense lab, gateway di ogni VLAN | .1 |
-| `nw1`, `nw2`, `n100` su LAB-MGMT | 10.66.0.11, .12, .13 |
-| `nw1`, `nw2`, `n100` su LAB-CLUSTER | 10.66.2.11, .12, .13 |
+| `nw1`, `nw2`, `n100` su LAB-MGMT | 10.66.0.21, .22, .23 |
+| `nw1`, `nw2`, `n100` su LAB-CLUSTER | 10.66.2.21, .22, .23 |
+| Riservati alle interfacce IPMI di `nw1`, `nw2`, `n100` | .11, .12, .13 |
+
+Gli indirizzi da .11 a .13 restano riservati in entrambe le sottoreti, così
+ogni nodo ha lo stesso schema: .1x per l'IPMI, .2x per il sistema. Le
+interfacce IPMI vivono su LAB-MGMT.
+
+Da verificare in fase 0: se l'IPMI delle NodeWeaver ha una porta dedicata o
+condivide una porta di rete. Con una porta dedicata servono due porte di
+accesso in più sulla VLAN 600 dello switch.
 
 ### 4.3 Regole di traffico
 
@@ -446,6 +455,7 @@ diretto tra lo stack Elastic e quello Graylog.
 - Piano di indirizzi verificato contro la produzione.
 - Identificazione della NodeWeaver da 32 GB, che diventa `nw1`.
 - Verifica delle regole di uscita del notebook sull'OPNsense di produzione, vedi 4.4.
+- Porta IPMI delle NodeWeaver: dedicata o condivisa, vedi 4.2.
 - **Fatto quando:** questo documento non ha più segnaposto.
 
 ### Fase 1: infrastruttura
