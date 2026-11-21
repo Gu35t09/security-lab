@@ -80,7 +80,7 @@ Worth watching once Proxmox runs, with smartd alerts.
 | Item | Value |
 |---|---|
 | BMC | Supermicro, with its own MAC address, separate from `eno1` and `eno2` |
-| LAN mode | Not read yet |
+| LAN mode | Failover (`02`), like `nw1` before the change |
 | Current address | Static, 10.0.0.212/24, gateway 10.0.0.1, on the router network |
 | VLAN tagging | Disabled |
 | Enabled authentication types | MD2, MD5, PASSWORD |
