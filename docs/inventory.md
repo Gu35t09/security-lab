@@ -51,7 +51,44 @@ Open points:
 
 ## nw2
 
-Not collected yet.
+Collected on 2026-11-21 from a Debian 13 test install.
+
+| Item | Value |
+|---|---|
+| Board | Supermicro, same model as `nw1` |
+| CPU | Intel Xeon E3-1230 v3, 4 cores, 8 threads, VT-x |
+| VT-d | Enabled: the kernel exposes IOMMU groups |
+| RAM | 24 GB, confirmed. This node is `nw2` |
+| Disk | WD Red SA500 2 TB SATA SSD |
+| Disk health | SMART passed, no reallocated sectors, no errors logged, 2521 power-on hours. Extended self-test not run yet |
+| Disk temperature | 43 °C now, 76 °C recorded maximum, the same as `nw1` |
+
+Both disks reached 76 °C in the past, above the usual 70 °C operating limit
+of SATA SSDs. Probably the previous workload, since the two histories match.
+Worth watching once Proxmox runs, with smartd alerts.
+
+### Network interfaces
+
+| Interface | Controller | PCI address | IOMMU group | Role in the plan |
+|---|---|---|---|---|
+| `eno1` | Intel I210, onboard | 03:00.0 | 11 | 1 GbE #1: trunk |
+| `eno2` | Intel I210, onboard | 04:00.0 | 12 | 1 GbE #2: corosync |
+| `enp5s0` | Intel I226-V, 2.5 GbE card | 05:00.0 | 13 | 2.5 GbE: mirror output to `nw1` |
+
+### IPMI
+
+| Item | Value |
+|---|---|
+| BMC | Supermicro, with its own MAC address, separate from `eno1` and `eno2` |
+| LAN mode | Not read yet |
+| Current address | Static, 10.0.0.212/24, gateway 10.0.0.1, on the router network |
+| VLAN tagging | Disabled |
+| Enabled authentication types | MD2, MD5, PASSWORD |
+| SNMP community | `public` |
+
+Open points, the same as `nw1`:
+- **LAN mode.** To be read and set to dedicated.
+- **Hardening.** New admin password, latest firmware, SNMP turned off. It stays on the router network for now, like `nw1`.
 
 ## n100
 
