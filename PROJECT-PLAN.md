@@ -1,6 +1,6 @@
 # Security Lab: project plan
 
-Status: design draft, nothing implemented yet.
+Status: phase 0 done, nothing deployed yet.
 Last updated: 2026-11-21.
 
 ## 1. Goal
@@ -122,8 +122,8 @@ change to production.
 
 ### 4.2 Segments
 
-VLAN IDs and subnets are placeholders. They must be checked against the
-production address plan to avoid overlaps.
+VLAN IDs and subnets were checked against production in phase 0: no
+overlap. Details in [docs/inventory.md](docs/inventory.md).
 
 | VLAN | Name | Subnet | Contents |
 |---|---|---|---|
@@ -196,9 +196,8 @@ cannot tell the notebook from the server. Countermeasures:
 - **SSH with a YubiKey**, as already done towards the production server.
 - **Second factor** on the Proxmox and OPNsense web interfaces, with WebAuthn on the YubiKey or TOTP.
 
-If the notebook's outbound traffic through the production OPNsense is
-allowlisted, a rule allowing 10.66.0.0/16 is needed. If outbound traffic is
-open, nothing is needed.
+The notebook can already reach every network through the production
+OPNsense, so no rule is needed there. Checked in phase 0.
 
 Emergency access: a switch port configured as an access port on LAB-MGMT.
 Plug the notebook in with a cable when the path through the router does not
@@ -493,7 +492,10 @@ Licensing note: Security Onion is built on Elastic, which is not under Apache
 ## 8. Phases and completion criteria
 
 ### Phase 0: inventory
-- Disk health and CPU model of the NodeWeavers. Results in [docs/inventory.md](docs/inventory.md).
+
+Done on 2026-11-21. Results in [docs/inventory.md](docs/inventory.md).
+
+- Disk health and CPU model of the NodeWeavers.
 - Address plan checked against production.
 - Identify the 32 GB NodeWeaver, which becomes `nw1`.
 - Check the notebook's outbound rules on the production OPNsense, see 4.4.

@@ -106,9 +106,8 @@ Collected on 2026-11-21 from its current Debian 13 install, hostname
 | Disk temperature | 40 °C |
 | IPMI | None. Address .13 stays reserved but unused |
 
-The node currently runs Docker and uses about 15 GB of RAM. Whatever runs
-there must be moved or confirmed disposable before Proxmox is installed,
-because the install wipes the disk.
+The node currently runs Docker and uses about 15 GB of RAM. Confirmed
+disposable on 2026-11-21: the Proxmox install can wipe the disk.
 
 The disk is an entry-level model with many hours on it. It is healthy today,
 but it is the weakest disk of the lab and hosts the lab OPNsense. Backups of
@@ -126,9 +125,10 @@ the OPNsense configuration and of the SOC VMs matter most on this node.
 Every port has its own IOMMU group, so the WAN port can be passed through to
 the OPNsense VM on its own. The fallback with a bridge is not needed.
 
-The order of the physical ports on the case still has to be matched to the
-interface names, for example by making each port LED blink with
-`ethtool -p`.
+The ports are labelled LAN1 to LAN4 on the case. The table assumes LAN1 is
+`enp1s0` and so on, following the PCI order. During the Proxmox install,
+check it once with the link state: plug a single cable into LAN1 and confirm
+that `enp1s0` is the interface that comes up.
 
 Without IPMI there is no remote power control. If the N100 hangs, it needs
 physical access, and the whole lab loses its network meanwhile.
@@ -141,13 +141,14 @@ physical access, and the whole lab loses its network meanwhile.
 | 32 GB NodeWeaver identified as `nw1` | Done |
 | NodeWeaver IPMI port | Done: dedicated on both, hardened, kept on the router network for now |
 | N100 passthrough of the WAN port | Possible: every port has its own IOMMU group |
-| Address plan against production | Partly done, see below |
-| Notebook outbound rules on the production OPNsense | To check |
-| N100 physical port order | To check |
-| Current N100 workload | To move or confirm disposable |
+| Address plan against production | Done, see below |
+| Notebook outbound rules on the production OPNsense | Done: the notebook can reach every network, no rule needed |
+| N100 physical port order | Done: ports labelled LAN1 to LAN4. Mapping to interface names confirmed during the install |
+| Current N100 workload | Done: disposable |
 
 Address plan: the production server repository uses VLAN 11 with
 10.123.11.0/24 and VLAN 12 with 10.123.12.0/24. The router network is
 10.0.0.0/24. None of them overlaps with 10.66.0.0/16 or with VLANs 600 to 640.
 Networks defined only on the production OPNsense, such as the notebook
-network, are not in the repository and still need a look.
+network, are not in the repository. The owner confirmed they are not a problem for
+the lab.
