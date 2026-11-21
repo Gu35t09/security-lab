@@ -156,7 +156,7 @@ LAB-MGMT is postponed. Until then, each BMC gets a new admin password, the
 latest firmware and SNMP turned off. Details in
 [docs/inventory.md](docs/inventory.md).
 
-The `nw1` IPMI has a dedicated port, currently in failover mode. Whether `nw2`
+The `nw1` IPMI has a dedicated port, set to dedicated mode. Whether `nw2`
 matches is checked in phase 0. Once on LAB-MGMT, each dedicated port needs its
 own access port on VLAN 600 of the switch.
 

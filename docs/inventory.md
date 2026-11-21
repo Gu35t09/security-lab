@@ -37,17 +37,17 @@ so any of them could be passed through to a VM if needed.
 | Item | Value |
 |---|---|
 | BMC | Supermicro, with its own MAC address, separate from `eno1` and `eno2` |
-| LAN mode | Failover (`02`): dedicated port when it has a link, otherwise shared on `eno1` |
+| LAN mode | Dedicated, set on 2026-11-21. It was failover (`02`), which falls back to `eno1` without a link on the IPMI port |
 | Current address | Static, 10.0.0.211/24, gateway 10.0.0.1, left over from the previous setup |
 | VLAN tagging | Disabled |
 | Enabled authentication types | MD2, MD5, PASSWORD |
 | SNMP community | `public` |
 
 Open points:
-- **LAN mode.** Currently failover. To be set to dedicated, so the BMC never appears on the trunk port. The dedicated IPMI port needs its own access port on VLAN 600.
+- **LAN mode.** Done: dedicated, so the BMC never appears on the trunk port.
 - **Hardening.** A Haswell-era BMC has known weaknesses. It must live only on LAB-MGMT, with a new admin password and the latest firmware available.
 - **Placement, decided 2026-11-21.** The BMC stays on the router network, 10.0.0.0/24, for now. That keeps out-of-band access even when the lab nodes or the lab OPNsense are down. The move to LAB-MGMT, at 10.66.0.11, is postponed.
-- **While it stays on the router network,** every device on that network can reach it. A new admin password, the latest firmware and SNMP turned off reduce the exposure.
+- **While it stays on the router network,** every device on that network can reach it. A new admin password, the latest firmware and SNMP turned off reduce the exposure. Admin password changed on 2026-11-21; firmware and SNMP still to do.
 
 ## nw2
 
