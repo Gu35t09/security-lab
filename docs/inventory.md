@@ -60,7 +60,7 @@ Collected on 2026-11-21 from a Debian 13 test install.
 | VT-d | Enabled: the kernel exposes IOMMU groups |
 | RAM | 24 GB, confirmed. This node is `nw2` |
 | Disk | WD Red SA500 2 TB SATA SSD |
-| Disk health | SMART passed, no reallocated sectors, no errors logged, 2521 power-on hours. Extended self-test not run yet |
+| Disk health | SMART passed, no reallocated sectors, no errors logged, 2521 power-on hours. Extended self-test completed without error |
 | Disk temperature | 43 °C now, 76 °C recorded maximum, the same as `nw1` |
 
 Both disks reached 76 °C in the past, above the usual 70 °C operating limit
@@ -80,15 +80,15 @@ Worth watching once Proxmox runs, with smartd alerts.
 | Item | Value |
 |---|---|
 | BMC | Supermicro, with its own MAC address, separate from `eno1` and `eno2` |
-| LAN mode | Failover (`02`), like `nw1` before the change |
+| LAN mode | Dedicated, set on 2026-11-21. It was failover (`02`) |
 | Current address | Static, 10.0.0.212/24, gateway 10.0.0.1, on the router network |
 | VLAN tagging | Disabled |
 | Enabled authentication types | MD2, MD5, PASSWORD |
 | SNMP community | `public` |
 
-Open points, the same as `nw1`:
-- **LAN mode.** To be read and set to dedicated.
-- **Hardening.** New admin password, latest firmware, SNMP turned off. It stays on the router network for now, like `nw1`.
+Open points:
+- **LAN mode.** Done: dedicated.
+- **Hardening.** Admin password changed and IPMI users checked on 2026-11-21. Firmware and SNMP still to do. It stays on the router network for now, like `nw1`.
 
 ## n100
 
