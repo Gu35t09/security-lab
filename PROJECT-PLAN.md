@@ -147,12 +147,18 @@ Main fixed addresses:
 | Reserved for the IPMI interfaces of `nw1`, `nw2`, `n100` | .11, .12, .13 |
 
 Addresses .11 to .13 stay reserved in both subnets, so every node follows the
-same scheme: .1x for IPMI, .2x for the system. The IPMI interfaces live on
-LAB-MGMT.
+same scheme: .1x for IPMI, .2x for the system. The IPMI interfaces will live
+on LAB-MGMT.
 
-To check in phase 0: whether the NodeWeaver IPMI has a dedicated port or
-shares a network port. A dedicated port needs two more access ports on VLAN
-600 of the switch.
+For now the IPMI interfaces stay on the router network, so out-of-band access
+works even when the lab nodes or the lab OPNsense are down. The move to
+LAB-MGMT is postponed. Until then, each BMC gets a new admin password, the
+latest firmware and SNMP turned off. Details in
+[docs/inventory.md](docs/inventory.md).
+
+The `nw1` IPMI has a dedicated port, currently in failover mode. Whether `nw2`
+matches is checked in phase 0. Once on LAB-MGMT, each dedicated port needs its
+own access port on VLAN 600 of the switch.
 
 ### 4.3 Traffic rules
 
@@ -575,3 +581,4 @@ OPNsense and a versioned export of the configuration.
 | N100 too slow | Services turned on per phase. `nw2` has no headroom left to take them |
 | Windows licenses expiring | Templates rebuilt automatically |
 | Management interface exposed on the router network | LAB-MGMT accepts only the production WAN and the emergency port |
+| BMCs reachable by every device on the router network, by choice | New admin password, latest firmware, SNMP off. Move to LAB-MGMT later |

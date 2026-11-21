@@ -46,7 +46,8 @@ so any of them could be passed through to a VM if needed.
 Open points:
 - **LAN mode.** Currently failover. To be set to dedicated, so the BMC never appears on the trunk port. The dedicated IPMI port needs its own access port on VLAN 600.
 - **Hardening.** A Haswell-era BMC has known weaknesses. It must live only on LAB-MGMT, with a new admin password and the latest firmware available.
-- **Target address.** 10.66.0.11 on LAB-MGMT.
+- **Placement, decided 2026-11-21.** The BMC stays on the router network, 10.0.0.0/24, for now. That keeps out-of-band access even when the lab nodes or the lab OPNsense are down. The move to LAB-MGMT, at 10.66.0.11, is postponed.
+- **While it stays on the router network,** every device on that network can reach it. A new admin password, the latest firmware and SNMP turned off reduce the exposure.
 
 ## nw2
 
