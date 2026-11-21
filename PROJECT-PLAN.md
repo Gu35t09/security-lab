@@ -1,6 +1,6 @@
 # Security Lab: project plan
 
-Status: design draft, nothing implemented yet.
+Status: phase 0 done, nothing deployed yet.
 Last updated: 2026-11-21.
 
 ## 1. Goal
@@ -122,8 +122,8 @@ change to production.
 
 ### 4.2 Segments
 
-VLAN IDs and subnets are placeholders. They must be checked against the
-production address plan to avoid overlaps.
+VLAN IDs and subnets were checked against production in phase 0: no
+overlap. Details in [docs/inventory.md](docs/inventory.md).
 
 | VLAN | Name | Subnet | Contents |
 |---|---|---|---|
@@ -147,12 +147,18 @@ Main fixed addresses:
 | Reserved for the IPMI interfaces of `nw1`, `nw2`, `n100` | .11, .12, .13 |
 
 Addresses .11 to .13 stay reserved in both subnets, so every node follows the
-same scheme: .1x for IPMI, .2x for the system. The IPMI interfaces live on
-LAB-MGMT.
+same scheme: .1x for IPMI, .2x for the system. The IPMI interfaces will live
+on LAB-MGMT.
 
-To check in phase 0: whether the NodeWeaver IPMI has a dedicated port or
-shares a network port. A dedicated port needs two more access ports on VLAN
-600 of the switch.
+For now the IPMI interfaces stay on the router network, so out-of-band access
+works even when the lab nodes or the lab OPNsense are down. The move to
+LAB-MGMT is postponed. Until then, each BMC gets a new admin password, the
+latest firmware and SNMP turned off. Details in
+[docs/inventory.md](docs/inventory.md).
+
+The `nw1` and `nw2` IPMI interfaces have a dedicated port, now set to
+dedicated mode. Once on LAB-MGMT, each dedicated port needs its own access
+port on VLAN 600 of the switch.
 
 ### 4.3 Traffic rules
 
@@ -190,9 +196,8 @@ cannot tell the notebook from the server. Countermeasures:
 - **SSH with a YubiKey**, as already done towards the production server.
 - **Second factor** on the Proxmox and OPNsense web interfaces, with WebAuthn on the YubiKey or TOTP.
 
-If the notebook's outbound traffic through the production OPNsense is
-allowlisted, a rule allowing 10.66.0.0/16 is needed. If outbound traffic is
-open, nothing is needed.
+The notebook can already reach every network through the production
+OPNsense, so no rule is needed there. Checked in phase 0.
 
 Emergency access: a switch port configured as an access port on LAB-MGMT.
 Plug the notebook in with a cable when the path through the router does not
@@ -487,6 +492,9 @@ Licensing note: Security Onion is built on Elastic, which is not under Apache
 ## 8. Phases and completion criteria
 
 ### Phase 0: inventory
+
+Done on 2026-11-21. Results in [docs/inventory.md](docs/inventory.md).
+
 - Disk health and CPU model of the NodeWeavers.
 - Address plan checked against production.
 - Identify the 32 GB NodeWeaver, which becomes `nw1`.
@@ -575,3 +583,4 @@ OPNsense and a versioned export of the configuration.
 | N100 too slow | Services turned on per phase. `nw2` has no headroom left to take them |
 | Windows licenses expiring | Templates rebuilt automatically |
 | Management interface exposed on the router network | LAB-MGMT accepts only the production WAN and the emergency port |
+| BMCs reachable by every device on the router network, by choice | New admin password, latest firmware, SNMP off. Move to LAB-MGMT later |
