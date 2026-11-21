@@ -15,7 +15,7 @@ Collected on 2026-11-21 from a Debian 13 test install.
 | VT-d | Enabled: the kernel exposes IOMMU groups |
 | RAM | 32 GB, confirmed. This node is `nw1` |
 | Disk | WD Red SA500 2 TB SATA SSD |
-| Disk health | SMART passed, no reallocated sectors, no errors logged, 2525 power-on hours |
+| Disk health | SMART passed, no reallocated sectors, no errors logged, 2525 power-on hours. Extended self-test completed without error |
 | Disk temperature | 44 °C now, 76 °C recorded maximum |
 
 ### Network interfaces
@@ -37,13 +37,14 @@ so any of them could be passed through to a VM if needed.
 | Item | Value |
 |---|---|
 | BMC | Supermicro, with its own MAC address, separate from `eno1` and `eno2` |
+| LAN mode | Failover (`02`): dedicated port when it has a link, otherwise shared on `eno1` |
 | Current address | Static, 10.0.0.211/24, gateway 10.0.0.1, left over from the previous setup |
 | VLAN tagging | Disabled |
 | Enabled authentication types | MD2, MD5, PASSWORD |
 | SNMP community | `public` |
 
 Open points:
-- **LAN mode.** Supermicro BMCs can use a dedicated port, share `eno1`, or fail over between the two. To be read and set to dedicated.
+- **LAN mode.** Currently failover. To be set to dedicated, so the BMC never appears on the trunk port. The dedicated IPMI port needs its own access port on VLAN 600.
 - **Hardening.** A Haswell-era BMC has known weaknesses. It must live only on LAB-MGMT, with a new admin password and the latest firmware available.
 - **Target address.** 10.66.0.11 on LAB-MGMT.
 
