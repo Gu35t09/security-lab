@@ -170,6 +170,7 @@ like any other host on its WAN side.
 |---|---|---|
 | Admin access, see 4.4 | LAB-MGMT | HTTPS and SSH |
 | LAB-MGMT | Any lab VLAN | Management |
+| LAB-MGMT | Internet | Allowlist only: Proxmox and Debian repositories, for host updates |
 | LAB-SOC | Internet | Allowlist only: package repositories, ET rules, MISP feeds, GitHub |
 | LAB-BUILD | Internet | Allowlist only: Windows Update, Debian, Ubuntu and Kali mirrors |
 | LAB-TGT-WIN and LAB-TGT-LNX | LAB-SOC | Agent ports only: Wazuh, Velociraptor, Elastic Agent, Fluent Bit forward to the aggregator |
@@ -503,6 +504,9 @@ Done on 2026-11-21. Results in [docs/inventory.md](docs/inventory.md).
 - **Done when:** this document has no placeholders left.
 
 ### Phase 1: infrastructure
+
+Step-by-step order in [docs/phase1-runbook.md](docs/phase1-runbook.md).
+
 - Proxmox on three nodes, cluster formed with two corosync rings, ext4 storage with LVM-thin, KSM on `nw2`.
 - Lab OPNsense on the N100 with WAN in passthrough and outbound NAT, static routes on the router.
 - VLANs on the switch, rules from section 4.3, second factor on the web interfaces, emergency port.
